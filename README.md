@@ -88,6 +88,6 @@ optional arguments:
 
 
 ## Citation
-Almasi H, Mishra H, Vamanan B, Ravi SN. Flag Aggregator: Scalable Distributed Training under Failures and Augmented Losses using Convex Optimization. arXiv preprint arXiv:xxxx.yyyyy. 2023 Feb 12.
+Almasi H, Mishra H, Vamanan B, Ravi SN. Flag Aggregator: Scalable Distributed Training under Failures and Augmented Losses using Convex Optimization. arXiv preprint arXiv:2302.05865. 2023 Feb 12.
 
 Correspondence to: Hamidreza Almasi <halmas3@uic.edu>.
