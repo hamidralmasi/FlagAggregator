@@ -1,6 +1,6 @@
 # Flag Aggregator
 
-The implementation of the Flag Aggregator on PyTorch.
+The implementation of the [Flag Aggregator](https://arxiv.org/abs/2302.05865) on PyTorch.
 
 
 ## Requirements
