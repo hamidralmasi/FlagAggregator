@@ -28,15 +28,13 @@ The following steps should be applied for **ALL** machines that are going to be 
 
 * `Main (current) directory for running the experiments.`
 
-   1. _Symlinks_ to the used modules from the `libs` directory.
+   1. `run_exp.sh`: an example script to automatically deploy the training on multiple nodes.
 
-   2. `run_exp.sh`: an example script to automatically deploy the training on multiple nodes.
+   2. `kill.sh`: a script to end the deployment and do the cleaning.
 
-   3. `kill.sh`: a script to end the deployment and do the cleaning.
+   3. `trainer.py`: the implementation of the robust distributed training experiment using the Garfield library.
 
-   4. `trainer.py`: the implementation of the robust distributed training experiment using the Garfield library.
-
-   5. `workers` and `servers`: the list of the workers and parameter server machines that should contribute to training for the corresponding application.
+   4. `workers` and `servers`: the list of the workers and parameter server machines that should contribute to training for the corresponding application.
 
 ## Notes on the `trainer.py` script
 * Single server, multiuple workers setup.
