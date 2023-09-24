@@ -1,34 +1,5 @@
-# coding: utf-8
-###
- # @file   datasets.py
- # @author Arsany Guirguis  <arsany.guirguis@epfl.ch>
- #
- # @section LICENSE
- #
- # Copyright (c) 2019-2020 Arsany Guirguis.
- #
- # Permission is hereby granted, free of charge, to any person obtaining a copy
- # of this software and associated documentation files (the "Software"), to deal
- # in the Software without restriction, including without limitation the rights
- # to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
- # copies of the Software, and to permit persons to whom the Software is
- # furnished to do so, subject to the following conditions:
- #
- # The above copyright notice and this permission notice shall be included in all
- # copies or substantial portions of the Software.
- #
- # THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
- # IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
- # FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
- # AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
- # LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
- # OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
- # SOFTWARE.
- #
- # @section DESCRIPTION
- #
- # Datasets management and partitioning.
-###
+
+# Datasets management and partitioning.
 
 #!/usr/bin/env python
 
@@ -38,11 +9,20 @@ import sys
 from random import Random
 from torchvision import datasets, transforms
 
-datasets_list = ['mnist', 'cifar10', 'cifar10noisy', 'tinyimagenet']
+# sharing_strategy = "file_descriptor" #file_system
+# torch.multiprocessing.set_sharing_strategy(sharing_strategy)
+
+# def set_worker_sharing_strategy(worker_id: int) -> None:
+#     torch.multiprocessing.set_sharing_strategy(sharing_strategy)
+
+datasets_list = ['mnist', 'cifar10', 'cifar10noisy', 'tinyimagenet', 'mnistnoisy','fmnist','tinyimagenetnoisy']
 MNIST = datasets_list.index('mnist')
+FMNIST = datasets_list.index('fmnist')
 CIFAR10 = datasets_list.index('cifar10')
 CIFAR10NOISY = datasets_list.index('cifar10noisy')
 TINYIMAGENET = datasets_list.index('tinyimagenet')
+TINYIMAGENETNOISY = datasets_list.index('tinyimagenetnoisy')
+MNISTNOISY = datasets_list.index('mnistnoisy')
 
 class Partition(object):
     """ Dataset-like object, but only access a subset of it. """
@@ -101,7 +81,7 @@ class DataPartitioner(object):
 class DatasetManager(object):
     """ Manages training and test sets"""
 
-    def __init__(self, dataset, minibatch, num_workers, size, rank):
+    def __init__(self, dataset, augmentedfolder, minibatch, num_workers, size, rank):
         """ Constrctor of DatasetManager Object
 	    Args
 		dataset		dataset name to be used
@@ -114,6 +94,7 @@ class DatasetManager(object):
             print("Existing datasets are: ", datasets_list)
             raise
         self.dataset = datasets_list.index(dataset)
+        self.augmentedfolder = augmentedfolder
         self.batch = minibatch * num_workers
         self.num_workers = num_workers
         self.num_ps = size - num_workers
@@ -126,15 +107,56 @@ class DatasetManager(object):
 		train		boolean to determine whether to fetch train or test set
 	"""
         homedir = str(pathlib.Path.home())
+
+
+        if dataset == FMNIST:
+            if train:
+              transforms_train = transforms.Compose([
+                transforms.Grayscale(num_output_channels=1),
+                transforms.ToTensor(),
+                transforms.Normalize((0.1307,), (0.3081,))])
+              dataset = datasets.ImageFolder(homedir+'/data/FashionMNIST/train', transform=transforms_train)
+              return dataset
+            else:
+              transforms_test = transforms.Compose([
+                transforms.Grayscale(num_output_channels=1),
+                transforms.ToTensor(),
+                transforms.Normalize((0.1307,), (0.3081,)),])
+              dataset = datasets.ImageFolder(homedir+'/data/FashionMNIST/test', transform=transforms_test)
+              return dataset
+
         if dataset == MNIST:
-            return datasets.MNIST(
-              homedir+'/data',
-              train=train,
-              download=True,
-              transform=transforms.Compose([
-                 transforms.ToTensor(),
-                 transforms.Normalize((0.1307, ), (0.3081, ))
-              ]))
+            if train:
+              transforms_train = transforms.Compose([
+                transforms.Grayscale(num_output_channels=1),
+                transforms.ToTensor(),
+                transforms.Normalize((0.1307,), (0.3081,))])
+              dataset = datasets.ImageFolder(homedir+'/data/MNIST/train', transform=transforms_train)
+              return dataset
+            else:
+              transforms_test = transforms.Compose([
+                transforms.Grayscale(num_output_channels=1),
+                transforms.ToTensor(),
+                transforms.Normalize((0.1307,), (0.3081,)),])
+              dataset = datasets.ImageFolder(homedir+'/data/MNIST/test', transform=transforms_test)
+              return dataset
+
+        if dataset == MNISTNOISY:
+            folder = "/data/MNISTnoisy/"+self.augmentedfolder
+            if train:
+              transforms_train = transforms.Compose([
+                transforms.Grayscale(num_output_channels=1),
+                transforms.ToTensor(),
+                transforms.Normalize((0.1307,), (0.3081,))])
+              dataset = datasets.ImageFolder(homedir+folder, transform=transforms_train)
+              return dataset
+            else:
+              transforms_test = transforms.Compose([
+                transforms.Grayscale(num_output_channels=1),
+                transforms.ToTensor(),
+                transforms.Normalize((0.1307,), (0.3081,)),])
+              dataset = datasets.ImageFolder(homedir+folder, transform=transforms_test)
+              return dataset
 
         if dataset == CIFAR10:
             if train:
@@ -144,7 +166,6 @@ class DatasetManager(object):
                 transforms.RandomHorizontalFlip(),
                 transforms.ToTensor(),
                 transforms.Normalize(mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225]),])
-#		transforms.Normalize((0.4914, 0.4822, 0.4465), (0.247, 0.243, 0.261)),])
               return datasets.CIFAR10(
                homedir+'/data',
                train=True,
@@ -155,38 +176,30 @@ class DatasetManager(object):
 #                transforms.Resize((299,299)),			#only use with inception
                 transforms.ToTensor(),
                 transforms.Normalize(mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225]),])
-#		transforms.Normalize((0.4914, 0.4822, 0.4465), (0.2023, 0.1994, 0.2010)),])
               return datasets.CIFAR10(
                 homedir+'/data',
                 train=False,
                 download=True,
                 transform=transforms_test)
 
-#            return datasets.CIFAR10(
-#               homedir+'/data',
-#               train=train,
-#               download=train,
-#               transform=transforms.Compose(
-#                  [transforms.ToTensor(),
-#                  transforms.Normalize((0.5, 0.5, 0.5), (0.5, 0.5, 0.5))]))
-
 
         if dataset == CIFAR10NOISY:
+            folder = "/data/cifar10noisy/"+self.augmentedfolder
             if train:
               transforms_train = transforms.Compose([
                 transforms.RandomCrop(32, padding=4),
                 transforms.RandomHorizontalFlip(),
                 transforms.ToTensor(),
                 transforms.Normalize(mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225]),])
-              
-              dataset = datasets.ImageFolder(homedir+'/data/cifar10noisy/train_lv', transform=transforms_train)
+
+              dataset = datasets.ImageFolder(homedir+folder, transform=transforms_train)
               return dataset
 
             else:
               transforms_test = transforms.Compose([
                 transforms.ToTensor(),
                 transforms.Normalize(mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225]),])
-              dataset = datasets.ImageFolder(homedir+'/data/cifar10noisy/train_lv', transform=transforms_test)
+              dataset = datasets.ImageFolder(homedir+folder, transform=transforms_test)
               return dataset
 
         if dataset == TINYIMAGENET:
@@ -196,7 +209,7 @@ class DatasetManager(object):
                 transforms.RandomHorizontalFlip(),
                 transforms.ToTensor(),
                 transforms.Normalize(mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225]),])
-              
+
               dataset = datasets.ImageFolder(homedir+'/data/tiny-imagenet-200/train', transform=transforms_train)
 
               return dataset
@@ -206,6 +219,26 @@ class DatasetManager(object):
                 transforms.Normalize(mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225]),])
               dataset = datasets.ImageFolder(homedir+'/data/tiny-imagenet-200/test', transform=transforms_test)
               return dataset
+
+        if dataset == TINYIMAGENETNOISY:
+            folder = "/data/augmented_tiny/"+self.augmentedfolder
+            if train:
+              transforms_train = transforms.Compose([
+                transforms.RandomCrop(64, padding=4),
+                transforms.RandomHorizontalFlip(),
+                transforms.ToTensor(),
+                transforms.Normalize(mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225]),])
+
+              dataset = datasets.ImageFolder(homedir+folder, transform=transforms_train)
+
+              return dataset
+            else:
+              transforms_test = transforms.Compose([
+                transforms.ToTensor(),
+                transforms.Normalize(mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225]),])
+              dataset = datasets.ImageFolder(homedir+folder, transform=transforms_test)
+              return dataset
+
 
     def get_train_set(self):
         """ Fetch my partition of the train set"""
@@ -217,19 +250,12 @@ class DatasetManager(object):
         partition = partition.use(self.rank - self.num_ps)
         print("Using batch size = ", bsz)
         train_set = torch.utils.data.DataLoader(
-            partition, batch_size=bsz, shuffle=False, pin_memory=True, num_workers=2)
+            partition, batch_size=bsz, shuffle=False, pin_memory=True)  # , worker_init_fn=set_worker_sharing_strategy
         return [sample for sample in train_set]
 
     def get_test_set(self):
         """ Fetch test set, which is global, i.e., same for all entities in the deployment"""
         test_set = self.fetch_dataset(self.dataset, train=False)
         test_set = torch.utils.data.DataLoader(test_set, batch_size=100, #len(test_set),
-		 pin_memory=True, shuffle=False, num_workers=2)
+		        pin_memory=True, shuffle=False, num_workers=2)  # , worker_init_fn=set_worker_sharing_strategy
         return test_set
-
-
-# image_datasets = {x: datasets.ImageFolder(os.path.join(data_dir, x), data_transforms[x]) 
-#                   for x in ['train', 'val','test']}
-# dataloaders = {x: data.DataLoader(image_datasets[x], batch_size=100, shuffle=True, num_workers=num_workers[x])
-#                   for x in ['train', 'val', 'test']}
-# dataset_sizes = {x: len(image_datasets[x]) for x in ['train', 'val', 'test']}

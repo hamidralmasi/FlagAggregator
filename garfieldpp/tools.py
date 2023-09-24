@@ -1,34 +1,3 @@
-# coding: utf-8
-###
- # @file   tools.py
- # @author Arsany Guirguis  <arsany.guirguis@epfl.ch>
- #
- # @section LICENSE
- #
- # Copyright (c) 2019 Arsany Guirguis.
- #
- # Permission is hereby granted, free of charge, to any person obtaining a copy
- # of this software and associated documentation files (the "Software"), to deal
- # in the Software without restriction, including without limitation the rights
- # to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
- # copies of the Software, and to permit persons to whom the Software is
- # furnished to do so, subject to the following conditions:
- #
- # The above copyright notice and this permission notice shall be included in all
- # copies or substantial portions of the Software.
- #
- # THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
- # IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
- # FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
- # AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
- # LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
- # OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
- # SOFTWARE.
- #
- # @section DESCRIPTION
- #
- # Misc functions that are useful for training.
-###
 
 #!/usr/bin/env python
 
@@ -55,7 +24,7 @@ def select_loss(loss_fn):
     else:
         print("The selected loss function is undefined, available losses are: ", losses.keys())
         raise
-  
+
 def select_model(model, device, dataset):
     """ Select model to train
     Args
@@ -63,36 +32,45 @@ def select_model(model, device, dataset):
     device    device to put model on (cuda or cpu)
     dataset     dataset name to be used for training
     """
-    models = {'convnet':Net,
+    models = {'simplenet': SimpleNet,
+        'convnet':Net,
 		'cifarnet':Cifarnet,
 		'cnn': CNNet,
 		'resnet18':torchvision.models.resnet18,
-                'resnet34':torchvision.models.resnet34,
-                'resnet50':torchvision.models.resnet50,
-                'resnet152':torchvision.models.resnet152,
+        'resnet34':torchvision.models.resnet34,
+        'resnet50':torchvision.models.resnet50,
+        'resnet152':torchvision.models.resnet152,
 		'inception':torchvision.models.inception_v3,
 		'vgg16':torchvision.models.vgg16,
 		'vgg19':torchvision.models.vgg19,
+        'vgg11':torchvision.models.vgg11,
+		'vgg13':torchvision.models.vgg13,
 		'preactresnet18': PreActResNet18,
 		'googlenet': GoogLeNet,
-		'densenet121': DenseNet121,
+		'densenet121': torchvision.models.densenet121,
 		'resnext29': ResNeXt29_2x64d,
 		'mobilenet': MobileNet,
-		'mobilenetv2': MobileNetV2,
+		'mobilenetv2': torchvision.models.mobilenet_v2, #MobileNetV2,
 		'dpn92': DPN92,
 		'shufflenetg2': ShuffleNetG2,
+        'shufflenetv2':torchvision.models.shufflenet_v2_x1_0,
 		'senet18': SENet18,
-		'efficientnetb0': EfficientNetB0,
-		'regnetx200': RegNetX_200MF}
-    num_classes_dict={"cifar10":10, "cifar100":100, "mnist":10, "imagenet":1000, "tinyimagenet":200, "cifar10noisy":10}
+		'efficientnetb0': torchvision.models.efficientnet_b0, #EfficientNetB0,
+		'regnetx200': RegNetX_200MF,
+        'wide_resnet50_2': torchvision.models.wide_resnet50_2,
+        'resnet50':torchvision.models.resnet50
+        }
+    num_classes_dict={"cifar10":10, "cifar100":100, "mnist":10, "fmnist":10, "imagenet":1000, "tinyimagenet":200, "cifar10noisy":10, "mnistnoisy":10, "tinyimagenetnoisy":200}
     if dataset in num_classes_dict.keys():
         num_classes = num_classes_dict[dataset]
     else:
         print("The specified dataset is undefined, available datasets are: ", num_classes_dict.keys())
         raise
     if model in models.keys():
-        model = models[model](num_classes=num_classes) #uncomment for CIFAR
-        # model = models[model](pretrained=True) #uncomment for tinyimagenet
+        if dataset == "tinyimagenet":
+            model = models[model](pretrained=True) #uncomment for tinyimagenet
+        else:
+            model = models[model](num_classes=num_classes) #uncomment for CIFAR:
 
     else:
         print("The specified model is undefined, available models are: ", models.keys())
@@ -200,4 +178,3 @@ def get_worker():
     while worker_instance is None:
         sleep(1)
     return worker_instance
-

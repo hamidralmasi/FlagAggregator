@@ -1,16 +1,13 @@
-'''
-This file contains the PyTorch implementation of FlagIRLS, l2-median and grassmannian gradient descent algorithms.
 
-by Hamidreza Almasi
-'''
 import numpy as np
 import torch
 import sys
+import csv
 
 def gr_log(X,Y):
     '''
     Log map on the Grassmannian.
-    
+
     Inputs:
         X (np.array) a point about which the tangent space has been computed
         Y (np.array) the point on the Grassmannian manifold that's mapped to the tangent space of X
@@ -25,11 +22,11 @@ def gr_log(X,Y):
     temp = np.eye(m) @ Y @ np.linalg.inv(X.T @ Y) - X @ (X.T @ Y) @ np.linalg.inv(X.T @ Y)
     U,S,V = np.linalg.svd(temp, full_matrices = False)
     Theta = np.arctan(S)
-    
+
     TY = U @ np.diag(Theta) @ V.T
-    
+
     return TY
-                                             
+
 
 def gr_exp(X, TY):
     '''
@@ -41,9 +38,9 @@ def gr_exp(X, TY):
         TY: (np.array) is a point in the tangent space of X.
     Outputs:
         Y: The output of the exponential map.
-    
+
     '''
-    
+
     U, S, V = np.linalg.svd(TY, full_matrices = False)
     Y = X @ V @ np.diag(np.cos(S)) + U @ np.diag(np.sin(S))
 
@@ -78,7 +75,7 @@ def l2_median(data, alpha, r, max_itrs, seed=0, init_datapoint = False):
     Code adopted from Tim Marrinan (translated from matlab into python)
 
     inputs:
-        data- list of numpy arrays 
+        data- list of numpy arrays
         alpha- float for the step size
         r- integer for Gr(r,n) where the output 'lives'
         max_itrs- integer for the maximum number of iterations
@@ -88,9 +85,9 @@ def l2_median(data, alpha, r, max_itrs, seed=0, init_datapoint = False):
         Y- numpy array for the l2-median
         err- objective function values at each iteration
     '''
-    
+
     n = data[0].shape[0]
-    
+
     if init_datapoint:
         np.random.seed(seed)
         Y = data[np.random.randint(len(data))]
@@ -98,11 +95,11 @@ def l2_median(data, alpha, r, max_itrs, seed=0, init_datapoint = False):
         np.random.seed(seed)
         Y_raw = np.random.rand(n,r)-.5
         Y = np.linalg.qr(Y_raw)[0][:,:r]
-    
+
     itr = 0
     errs = []
     diff = 1
-    
+
     while diff > 0.000001 and itr < max_itrs:
         d_fracs = 0
         ld_fracs = np.empty((n,r))
@@ -120,28 +117,28 @@ def l2_median(data, alpha, r, max_itrs, seed=0, init_datapoint = False):
         else:
             vk = ld_fracs/d_fracs
             Y = gr_exp(Y, alpha * vk)
-            
+
             errs.append(np.sum(dists))
-            
+
             if itr > 0:
                 diff = np.abs(errs[-2] - errs[-1])
-            
+
             if not np.allclose(Y.T @ Y, np.eye(r,r)):
                 Y = np.linalg.qr(Y)[0][:,:r]
-            
-            itr+=1 
-    
+
+            itr+=1
+
     return Y, errs
 
 
 
 def calc_error_1_2(data, Y, sin_cos):
     '''
-    Calculate objective function value. 
+    Calculate objective function value.
 
     Inputs:
         data - a list of numpy arrays representing points in Gr(k_i,n)
-        Y - a numpy array representing a point on Gr(r,n) 
+        Y - a numpy array representing a point on Gr(r,n)
         sin_cos - a string defining the objective function
                     'cosine' = Maximum Cosine
                     'sine' = Sine Median
@@ -152,7 +149,10 @@ def calc_error_1_2(data, Y, sin_cos):
     '''
     k = Y.shape[1]
     # print("k: ", k)
-    err = torch.zeros(1).cuda()
+    if torch.cuda.is_available():
+        err = torch.zeros(1).cuda()
+    else:
+        err = torch.zeros(1)
     if sin_cos == 'sine':
         for x in data:
             r = np.min([k,x.shape[1]])
@@ -160,9 +160,12 @@ def calc_error_1_2(data, Y, sin_cos):
 
             #fixes numerical errors
             if sin_sq < 0:
-                sin_sq = torch.zeros(1).cuda()
+                if torch.cuda.is_available():
+                    sin_sq = torch.zeros(1).cuda()
+                else:
+                    sin_sq = torch.zeros(1)
             err += torch.sqrt(sin_sq)
-    
+
     elif sin_cos == 'sinesq':
         for x in data:
             r = np.min([k,x.shape[1]])
@@ -199,16 +202,8 @@ def flag_mean(data, r):
     '''
     X = torch.hstack(data)
 
-    # print("Shape of X:" + str(np.shape(X)))
-
-    # print("r is: " + str(r))
-
-    # print("Length of data: " + str(len(data)))
-    # mean = torch.svd(X)[0][:,:r]
     mean = torch.linalg.svd(X, full_matrices = False)[0][:,:r]
     return mean
-
-
 
 
 def flag_mean_iteration(data, Y0, weight, itr, eps = .0000001, **kwargs):
@@ -227,7 +222,7 @@ def flag_mean_iteration(data, Y0, weight, itr, eps = .0000001, **kwargs):
         Y- the weighted flag mean
     '''
     r = Y0.shape[1]
-    
+
     aX = []
     al = []
 
@@ -242,91 +237,35 @@ def flag_mean_iteration(data, Y0, weight, itr, eps = .0000001, **kwargs):
         if weight == 'sine':
             m = np.min([r,x.shape[1]])
             sinsq = torch.absolute((m - torch.trace(Y0.T @ x @ x.T @ Y0)))
-            # print("sinesq: "+ str(sinsq))
             w = (sinsq+eps)**(-1/4)
             if(log_file):
                 log_file.write(str(w.item()) + ",")
-            al.append(w) #(1/p)*# 
+            al.append(w) #(1/p)*#
         else:
             print('unrecognized weight')
-        # print("x is: " + str(x))
-        # print("is cuda al[-1]*x: " + str((al[-1]*x).is_cuda))
+
         aX.append(al[-1]*x)
         ii+= 1
 
-    # print("ii: " + str(ii))
-    # print("len(aX): " + str(len(aX)))
 
-    for x in data:
-        for y in data:
-            if x is not y:
-                if weight == 'sine':
-                    m = np.min([r,x.shape[1]])
-                    sinsq = torch.absolute((m - torch.trace(Y0.T @ (x - y) @ (x - y).T @ Y0)))
-                    w = ((sinsq+eps)**(-1/4)* lambda_ / (p*(p-1)))
-                    if(log_file):
-                        log_file.write(str(w.item()) + ",")
-                    al.append(w)
-                else:
-                    print('unrecognized weight')
-                aX.append(al[-1]*(x - y))
-    # aX = [aX[i] * (lambda_/(p*(p-1))) for i in range(ii - (p * (p-1)) , len(aX))]
+    # if lambda is positive:
+    if lambda_ > 0:
+        # begin computing pairwise distances:
+        for x in data:
+            for y in data:
+                if x is not y:
+                    if weight == 'sine':
+                        m = np.min([r,x.shape[1]])
+                        sinsq = torch.absolute((m - torch.trace(Y0.T @ (x - y) @ (x - y).T @ Y0)))
+                        w = ((sinsq+eps)**(-1/4)) * lambda_ / (p*(p-1))
+                        if(log_file):
+                            log_file.write(str(w.item()) + ",")
+                        al.append(w)
+                    else:
+                        print('unrecognized weight')
+                    aX.append(al[-1]*(x - y))
+        # end computing pairwise distances
 
-    # # pick 2 * p distinct random pairs of indices from 0 to p-1
-    # rand_pairs = np.random.choice(p, size = (2 * p, 2), replace = True)
-    # cnt = 0
-    # for k in range(len(rand_pairs)):
-    #     i = rand_pairs[k][0]
-    #     j = rand_pairs[k][1]
-    #     if i == j:
-    #         continue
-    #     cnt += 1
-    #     xi = data[i]
-    #     xj = data[j]
-    #     if weight == 'sine':
-    #         m = np.min([r,xi.shape[1]])
-    #         sinsq = torch.absolute((m - torch.trace(Y0.T @ (xi - xj) @ (xi - xj).T @ Y0)))
-    #         w = (sinsq+eps)**(-1/4)
-    #         if(log_file):
-    #             log_file.write(str(w.item()) + ",")
-    #         al.append(w)
-    #     else:
-    #         print('unrecognized weight')
-    #     aX.append(al[-1]*(xi - xj))
-    #     ii+= 1
-    # # multiply elements of aX by lambda_/cnt
-    # # print("len(aX): " + str(len(aX)))
-    # # print("cnt: " + str(cnt))
-    # aX = [aX[i] * (lambda_/cnt) for i in range(ii - cnt, len(aX))]
-    
-
-    # for i in range(num_rand):
-    #     for j in range(num_rand):
-    #         # pick a random index from the data
-    #         idx = np.random.randint(0, p)
-    #         # pick another random index from the data that is not the same as the first
-    #         idx2 = np.random.randint(0, p)
-    #         while idx2 == idx:
-    #             idx2 = np.random.randint(0, p)
-    #         # 
-    #         if i != j:
-    #             xi = data[i]
-    #             xj = data[j]
-    #             if weight == 'sine':
-    #                 m = np.min([r,xi.shape[1]])
-    #                 sinsq = torch.absolute((m - torch.trace(Y0.T @ (xi - xj) @ (xi - xj).T @ Y0)))
-    #                 w = (sinsq+eps)**(-1/4)
-    #                 if(log_file):
-    #                     log_file.write(str(w.item()) + ",")
-    #                 al.append((lambda_ / (p * (p - 1)))*w)
-    #             else:
-    #                 print('unrecognized weight')
-    #             aX.append(al[-1]*(xi - xj))
-    #             ii+= 1
-        
-
-    # print("al: " + str(al))
-    # print("Shape of aX: " + str(np.shape(aX)))
     Y = flag_mean(aX, r)
     if(log_file):
         log_file.write("\n")
@@ -334,9 +273,9 @@ def flag_mean_iteration(data, Y0, weight, itr, eps = .0000001, **kwargs):
 
 
 
-def irls_flag(data, r, n_its, sin_cos, opt_err = 'geodesic', init = 'random', seed = 0, **kwargs): 
+def irls_flag(data, r, n_its, sin_cos, opt_err = 'geodesic', init = 'random', seed = 0, **kwargs):
     '''
-    Use FlagIRLS on data to output a representative for a point in Gr(r,n) 
+    Use FlagIRLS on data to output a representative for a point in Gr(r,n)
     which solves the input objection function
 
     Repeats until iterations = n_its or until objective function values of consecutive
@@ -349,7 +288,7 @@ def irls_flag(data, r, n_its, sin_cos, opt_err = 'geodesic', init = 'random', se
         sin_cos - a string defining the objective function for FlagIRLS
                     'sine' = flag median
         opt_err - string for objective function values in err (same options as sin_cos)
-        init - string 'random' for random initlalization. 
+        init - string 'random' for random initlalization.
             otherwise input a numpy array for the inital point
         seed - seed for random initialization, for reproducibility of results
     Outputs:
@@ -365,26 +304,51 @@ def irls_flag(data, r, n_its, sin_cos, opt_err = 'geodesic', init = 'random', se
         #randomly
         # torch random seed
         torch.manual_seed(seed)
-        # create random (n, r)
+
         Y_raw = torch.rand(n, r) - 0.5
+        if torch.cuda.is_available():
+            Y_raw = Y_raw.to(device='cuda')
+
+
+        Y_mean =torch.sum(torch.stack(data), dim=0).div(len(data))
+        norm = torch.norm(Y_mean)
+
+# Normalize the tensor by dividing each element by the norm
+        Y_mean = Y_mean / norm
+        if torch.cuda.is_available():
+            Y_mean = Y_mean.to(device='cuda')
+        iter = kwargs.get('iter', 0)
+        values = [(data[i].T@Y_mean@Y_mean.T@data[i])/(data[i].T@data[i]) for i in range(len(data))]
+
+        header = ['w' + str(i+1) for i in range(15)]
+        with open('/home/data/Garfield/pytorch_impl/applications/Aggregathor/values_suboptimal.csv', 'a+', newline='') as f:
+            writer = csv.writer(f)
+            if iter == 1:
+                f.truncate(0)
+                writer.writerow(header)
+            else:
+                values_np = [values[i].cpu().numpy().flatten().tolist() for i in range(len(values))]
+                values_np = [str(val).strip('[]') for val in values_np]
+                writer.writerow(values_np)
+
         # qr decomposition
         Y = torch.qr(Y_raw)[0][:,:r]
-        Y = Y.to(device='cuda')
-        
-        # print("Y shape: " + str(Y.shape))
+        if torch.cuda.is_available():
+            Y = Y.to(device='cuda')
+
+
+
     elif init == 'data':
         torch.manual_seed(seed)
         Y = data[torch.randint(len(data))]
     else:
         Y = init
 
-    # print("Shape of initial Y: " + str(np.shape(Y)))
     err.append(calc_error_1_2(data, Y, opt_err))
-    
+
     #flag mean iteration function
-    #uncomment the commented lines and 
-    #comment others to change convergence criteria
-    
+
+
     itr = 1
     diff = 1
     while itr <= n_its and diff > 0.0000000001 and err[itr - 1] > 0.0000000001:
@@ -394,11 +358,9 @@ def irls_flag(data, r, n_its, sin_cos, opt_err = 'geodesic', init = 'random', se
 
         err.append(calc_error_1_2(data, Y, opt_err))
         diff  = err[itr-1] - err[itr]
-           
+
         itr+=1
-        # print("itr: " + str(itr))
-        # print("err: " + str(err))
-        # print("diff: "  + str(diff))
+
 
     if diff > 0:
         return Y, err
@@ -435,7 +397,7 @@ def calc_gradient(data, Y0, weight = 'sine'):
         aX.append(al[-1]*x)
 
     big_X = np.hstack(aX)
-    
+
     grad = big_X @ big_X.T @ Y0
 
     return grad
@@ -453,7 +415,7 @@ def gradient_descent(data, r, alpha, n_its, sin_cos, init = 'random', seed = 0):
         sin_cos - a string defining the objective function
                     'sine' = flag median
                     'sinsq' = flag mean
-        init - string 'random' for random initlalization. 
+        init - string 'random' for random initlalization.
             otherwise input a numpy array for the inital point
     Outputs:
         Y - a numpy array representing the solution to the chosen optimization algorithm
@@ -477,7 +439,7 @@ def gradient_descent(data, r, alpha, n_its, sin_cos, init = 'random', seed = 0):
         Fy = calc_gradient(data,Y,sin_cos)
         # project the gradient onto the tangent space
         G = (np.eye(n)-Y@Y.T)@Fy
-        
+
         [U,S,V] = np.linalg.svd(G)
         cosin = np.diag(np.cos(-alpha*S))
         sin = np.vstack([np.diag(np.sin(-alpha*S)), np.zeros((n-r,r))])
@@ -485,6 +447,6 @@ def gradient_descent(data, r, alpha, n_its, sin_cos, init = 'random', seed = 0):
             Y = Y*V*cosin*V.T+U@sin *V.T
         else:
             Y = Y@V@cosin@V.T+U@sin@V.T
-        
+
         err.append(calc_error_1_2(data, Y, sin_cos))
     return Y, err

@@ -1,17 +1,3 @@
-# coding: utf-8
-###
- # @file   cluster.py
- # @author Sébastien Rouault <sebastien.rouault@alumni.epfl.ch>
- #
- # @section LICENSE
- #
- # Copyright © 2018-2019 École Polytechnique Fédérale de Lausanne (EPFL).
- # All rights reserved.
- #
- # @section DESCRIPTION
- #
- # Basic TF cluster specification parsers and helpers.
-###
 
 __all__ = ["cluster_parsers", "cluster_parse"]
 

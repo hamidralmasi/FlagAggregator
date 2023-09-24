@@ -1,17 +1,4 @@
-# coding: utf-8
-###
- # @file   access.py
- # @author Sébastien Rouault <sebastien.rouault@alumni.epfl.ch>
- #
- # @section LICENSE
- #
- # Copyright © 2018-2019 École Polytechnique Fédérale de Lausanne (EPFL).
- # All rights reserved.
- #
- # @section DESCRIPTION
- #
- # Helpers relative to ability to read/write files and directories.
-###
+
 
 __all__ = ["can_access"]
 

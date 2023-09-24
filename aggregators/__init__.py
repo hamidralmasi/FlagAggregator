@@ -1,36 +1,3 @@
-# coding: utf-8
-###
- # @file   __init__.py
- # @author Sébastien Rouault <sebastien.rouault@alumni.epfl.ch>
- #
- # @section LICENSE
- #
- # Copyright © 2018-2020 École Polytechnique Fédérale de Lausanne (EPFL).
- # All rights reserved.
- #
- # @section DESCRIPTION
- #
- # Loading of the local modules.
- #
- # Each rule MUST support taking any named arguments, possibly ignoring them.
- # The parameters MUST all be passed as their keyword arguments.
- # The reserved argument names, and their interface, are the following:
- # · gradients: Non-empty list of gradients to aggregate
- # · f        : Number of Byzantine gradients to support
- # · model    : Model (duck-typing 'experiments.Model') with valid default dataset and loss set
- # The rule, given "valid" parameter(s), MUST NOT return a tensor that is a reference to any tensor given as parameter.
- #
- # Each rule MUST provide a "check" member function, taking the same arguments as the rule itself.
- # The "check" member function returns 'None' when the parameters are valid,
- # or an explanatory string when the parameters are not valid.
- # The check member function MUST NOT modify the given parameters.
- #
- # Once registered, the check member function will be available as member "check".
- # The raw function and a wrapped checking the input/output of the raw function
- # will respectively be available as members "unchecked" and "checked".
- # Which of these two functions is called by default depends whether debug mode is enabled.
-###
-
 import pathlib
 import torch
 

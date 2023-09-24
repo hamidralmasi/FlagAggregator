@@ -1,17 +1,3 @@
-# coding: utf-8
-###
- # @file condense.py
- # @author Sébastien Rouault <sebastien.rouault@alumni.epfl.ch>
- #
- # @section LICENSE
- #
- # Copyright © 2020 École Polytechnique Fédérale de Lausanne (EPFL).
- # All rights reserved.
- #
- # @section DESCRIPTION
- #
- # Condense parameter vector aggregation random function.
-###
 
 import tools
 from . import register

@@ -1,34 +1,5 @@
-# coding: utf-8
-###
- # @file   byzWorker.py
- # @author Arsany Guirguis  <arsany.guirguis@epfl.ch>
- #
- # @section LICENSE
- #
- # Copyright (c) 2020 Arsany Guirguis.
- #
- # Permission is hereby granted, free of charge, to any person obtaining a copy
- # of this software and associated documentation files (the "Software"), to deal
- # in the Software without restriction, including without limitation the rights
- # to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
- # copies of the Software, and to permit persons to whom the Software is
- # furnished to do so, subject to the following conditions:
- #
- # The above copyright notice and this permission notice shall be included in all
- # copies or substantial portions of the Software.
- #
- # THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
- # IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
- # FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
- # AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
- # LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
- # OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
- # SOFTWARE.
- #
- # @section DESCRIPTION
- #
- # Byzantine worker class: inherits the typical worker class and applies some set of attacks.
-###
+
+# Byzantine worker class: inherits the typical worker class and applies some set of attacks.
 
 #!/usr/bin/env python
 
@@ -43,7 +14,7 @@ import sys
 
 class ByzWorker(Worker):
     """ Byzantine worker """
-    def __init__(self, rank, world_size, num_workers, batch_size, model, dataset, loss, attack, fw=1):
+    def __init__(self, rank, world_size, num_workers, batch_size, model, dataset, augmentedfolder, loss, attack, fw=1):
         """ Constructor of Byzanrtine worker Object
         Args
         world_size     total number of nodes in the deployment
@@ -56,7 +27,7 @@ class ByzWorker(Worker):
         attack	       name of the attack to be applied by this worker
         fw             the number of Byzantine workers; used to simulate sophisticated attacks
         """
-        super().__init__(rank, world_size, num_workers, batch_size, model, dataset, loss)
+        super().__init__(rank, world_size, num_workers, batch_size, model, dataset, augmentedfolder, loss)
         self.fw = fw
         attacks = {'random':self.random_attack,
 			'reverse':self.reverse_attack,
@@ -90,7 +61,7 @@ class ByzWorker(Worker):
         iter_num     the number of current iteration; this determines the local batch to be used for training
         """
         rank, grad, loss = super().compute_gradients(iter_num, model)
-        return rank, grad*-100, loss
+        return rank, grad*-10, loss
 
     def partial_drop_attack(self, iter_num, model):
         """ return the gradient but with some missing coordinates (replaced by zeros)
@@ -119,8 +90,8 @@ class ByzWorker(Worker):
         mu = torch.mean(est_grads,axis=0)
         sigma = torch.std(est_grads,axis=0)
         #Now, apply the rule of the attack to generate the Byzantine gradient
-        z = 1.035                      #Pre-calculated value for z_{max} from z-table, based on n=20, f=8 (and hence, s=3)
-        grad = mu + z*sigma
+        z = 0.21                      #Pre-calculated value for z_{max} from z-table, based on n=2015, f=83 (and hence, s=5)
+        grad = mu - z*sigma
         return rank, grad, loss
 
     def fall_empires_attack(self, iter_num, model):
@@ -137,7 +108,6 @@ class ByzWorker(Worker):
         #Stack these gradients together and calcualte their mean and standard deviation
         est_grads = torch.stack(est_grads)
         mu = torch.mean(est_grads,axis=0)
-        eps = 10		#The value of epsilon is purely empirical and relies on the GAR used too
+        eps = 0.1		#The value of epsilon is purely empirical and relies on the GAR used too
         grad = -eps*mu
         return rank, grad, loss
-

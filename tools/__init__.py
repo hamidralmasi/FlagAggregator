@@ -1,17 +1,3 @@
-# coding: utf-8
-###
- # @file   __init__.py
- # @author Sébastien Rouault <sebastien.rouault@alumni.epfl.ch>
- #
- # @section LICENSE
- #
- # Copyright © 2018-2019 École Polytechnique Fédérale de Lausanne (EPFL).
- # All rights reserved.
- #
- # @section DESCRIPTION
- #
- # Bunch of useful tools, but each too small to have its own package.
-###
 
 import io
 import os

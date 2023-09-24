@@ -1,35 +1,3 @@
-# coding: utf-8
-###
- # @file   worker.py
- # @author Arsany Guirguis  <arsany.guirguis@epfl.ch>
- #
- # @section LICENSE
- #
- # Copyright (c) 2020 Arsany Guirguis.
- #
- # Permission is hereby granted, free of charge, to any person obtaining a copy
- # of this software and associated documentation files (the "Software"), to deal
- # in the Software without restriction, including without limitation the rights
- # to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
- # copies of the Software, and to permit persons to whom the Software is
- # furnished to do so, subject to the following conditions:
- #
- # The above copyright notice and this permission notice shall be included in all
- # copies or substantial portions of the Software.
- #
- # THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
- # IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
- # FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
- # AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
- # LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
- # OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
- # SOFTWARE.
- #
- # @section DESCRIPTION
- #
- # Worker class.
-###
-
 #!/usr/bin/env python
 
 import torch
@@ -45,7 +13,7 @@ import sys
 
 class Worker:
     """ Byzantine-resilient worker """
-    def __init__(self, rank, world_size, num_workers, batch_size, model, dataset, loss):
+    def __init__(self, rank, world_size, num_workers, batch_size, model, dataset, augmentedfolder, loss):
         """ Constructor of worker Object
         Args
         rank           unique ID of this worker node in the deployment
@@ -64,7 +32,7 @@ class Worker:
         self.rank = rank
         self.batch_size = batch_size
         self.loss = tools.select_loss(loss)
-        manager = DatasetManager(dataset, batch_size, num_workers, world_size, rank)
+        manager = DatasetManager(dataset, augmentedfolder, batch_size, num_workers, world_size, rank)
         self.train_set = manager.get_train_set()        #train_set is a list of pairs: (data, target)
         self.num_train_samples = len(self.train_set)
         tools.worker_instance = self

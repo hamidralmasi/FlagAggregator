@@ -1,17 +1,3 @@
-# coding: utf-8
-###
- # @file   bulyan.py
- # @author Sébastien Rouault <sebastien.rouault@alumni.epfl.ch>
- #
- # @section LICENSE
- #
- # Copyright © 2018-2020 École Polytechnique Fédérale de Lausanne (EPFL).
- # All rights reserved.
- #
- # @section DESCRIPTION
- #
- # Bulyan over Multi-Krum GAR.
-###
 
 import tools
 from . import register
@@ -103,9 +89,11 @@ def aggregate(gradients, f, m=None, **kwargs):
   # Return resulting gradient
 
   iter = kwargs.get('iter', 0)
-  filepath = kwargs.get('filepath', "/home/evl/halmas3/data/Garfield/pytorch_impl/applications/Aggregathor/")
-  if (iter % 5 == 0):
-    torch.save(avgmed, filepath + 'Y_bulyan_' + str(iter//5) + '.pt')
+  filepath = kwargs.get('filepath', "/home/data/Garfield/pytorch_impl/applications/Aggregathor/")
+
+  # save the gradient
+  # if (iter % 5 == 0):
+  #   torch.save(avgmed, filepath + 'Y_bulyan_' + str(iter//5) + '.pt')
 
   return avgmed
 

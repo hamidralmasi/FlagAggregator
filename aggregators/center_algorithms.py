@@ -1,15 +1,11 @@
-'''
-This file contains the FlagIRLS, l2-median and grassmannian gradient descent algorithms.
 
-by Nathan Mankovich
-'''
 import numpy as np
 import sys
 
 def gr_log(X,Y):
     '''
     Log map on the Grassmannian.
-    
+
     Inputs:
         X (np.array) a point about which the tangent space has been computed
         Y (np.array) the point on the Grassmannian manifold that's mapped to the tangent space of X
@@ -24,11 +20,11 @@ def gr_log(X,Y):
     temp = np.eye(m) @ Y @ np.linalg.inv(X.T @ Y) - X @ (X.T @ Y) @ np.linalg.inv(X.T @ Y)
     U,S,V = np.linalg.svd(temp, full_matrices = False)
     Theta = np.arctan(S)
-    
+
     TY = U @ np.diag(Theta) @ V.T
-    
+
     return TY
-                                             
+
 
 def gr_exp(X, TY):
     '''
@@ -40,9 +36,9 @@ def gr_exp(X, TY):
         TY: (np.array) is a point in the tangent space of X.
     Outputs:
         Y: The output of the exponential map.
-    
+
     '''
-    
+
     U, S, V = np.linalg.svd(TY, full_matrices = False)
     Y = X @ V @ np.diag(np.cos(S)) + U @ np.diag(np.sin(S))
 
@@ -77,7 +73,7 @@ def l2_median(data, alpha, r, max_itrs, seed=0, init_datapoint = False):
     Code adopted from Tim Marrinan (translated from matlab into python)
 
     inputs:
-        data- list of numpy arrays 
+        data- list of numpy arrays
         alpha- float for the step size
         r- integer for Gr(r,n) where the output 'lives'
         max_itrs- integer for the maximum number of iterations
@@ -87,9 +83,9 @@ def l2_median(data, alpha, r, max_itrs, seed=0, init_datapoint = False):
         Y- numpy array for the l2-median
         err- objective function values at each iteration
     '''
-    
+
     n = data[0].shape[0]
-    
+
     if init_datapoint:
         np.random.seed(seed)
         Y = data[np.random.randint(len(data))]
@@ -97,11 +93,11 @@ def l2_median(data, alpha, r, max_itrs, seed=0, init_datapoint = False):
         np.random.seed(seed)
         Y_raw = np.random.rand(n,r)-.5
         Y = np.linalg.qr(Y_raw)[0][:,:r]
-    
+
     itr = 0
     errs = []
     diff = 1
-    
+
     while diff > 0.000001 and itr < max_itrs:
         d_fracs = 0
         ld_fracs = np.empty((n,r))
@@ -119,28 +115,28 @@ def l2_median(data, alpha, r, max_itrs, seed=0, init_datapoint = False):
         else:
             vk = ld_fracs/d_fracs
             Y = gr_exp(Y, alpha * vk)
-            
+
             errs.append(np.sum(dists))
-            
+
             if itr > 0:
                 diff = np.abs(errs[-2] - errs[-1])
-            
+
             if not np.allclose(Y.T @ Y, np.eye(r,r)):
                 Y = np.linalg.qr(Y)[0][:,:r]
-            
-            itr+=1 
-    
+
+            itr+=1
+
     return Y, errs
 
 
 
 def calc_error_1_2(data, Y, sin_cos):
     '''
-    Calculate objective function value. 
+    Calculate objective function value.
 
     Inputs:
         data - a list of numpy arrays representing points in Gr(k_i,n)
-        Y - a numpy array representing a point on Gr(r,n) 
+        Y - a numpy array representing a point on Gr(r,n)
         sin_cos - a string defining the objective function
                     'cosine' = Maximum Cosine
                     'sine' = Sine Median
@@ -223,7 +219,7 @@ def flag_mean_iteration(data, Y0, weight, eps = .0000001):
         Y- the weighted flag mean
     '''
     r = Y0.shape[1]
-    
+
     aX = []
     al = []
 
@@ -233,15 +229,12 @@ def flag_mean_iteration(data, Y0, weight, eps = .0000001):
         if weight == 'sine':
             m = np.min([r,x.shape[1]])
             sinsq = np.absolute((m - np.trace(Y0.T @ x @ x.T @ Y0)))
-            # print("sinesq: "+ str(sinsq))
             al.append((sinsq+eps)**(-1/4))
         else:
             print('unrecognized weight')
-        # print("x is: " + str(x))
         aX.append(al[-1]*x)
         ii+= 1
 
-    # print("al: " + str(al))
 
     Y = flag_mean(aX, r)
 
@@ -249,9 +242,9 @@ def flag_mean_iteration(data, Y0, weight, eps = .0000001):
 
 
 
-def irls_flag(data, r, n_its, sin_cos, opt_err = 'geodesic', init = 'random', seed = 0): 
+def irls_flag(data, r, n_its, sin_cos, opt_err = 'geodesic', init = 'random', seed = 0):
     '''
-    Use FlagIRLS on data to output a representative for a point in Gr(r,n) 
+    Use FlagIRLS on data to output a representative for a point in Gr(r,n)
     which solves the input objection function
 
     Repeats until iterations = n_its or until objective function values of consecutive
@@ -264,7 +257,7 @@ def irls_flag(data, r, n_its, sin_cos, opt_err = 'geodesic', init = 'random', se
         sin_cos - a string defining the objective function for FlagIRLS
                     'sine' = flag median
         opt_err - string for objective function values in err (same options as sin_cos)
-        init - string 'random' for random initlalization. 
+        init - string 'random' for random initlalization.
             otherwise input a numpy array for the inital point
         seed - seed for random initialization, for reproducibility of results
     Outputs:
@@ -287,13 +280,10 @@ def irls_flag(data, r, n_its, sin_cos, opt_err = 'geodesic', init = 'random', se
     else:
         Y = init
 
-    # print("Shape of initial Y: " + str(np.shape(Y)))
     err.append(calc_error_1_2(data, Y, opt_err))
 
-    #flag mean iteration function
-    #uncomment the commented lines and 
-    #comment others to change convergence criteria
-    
+
+
     itr = 1
     diff = 1
     while itr <= n_its and diff > 0.0000000001 and err[itr - 1] > 0.0000000001:
@@ -301,11 +291,9 @@ def irls_flag(data, r, n_its, sin_cos, opt_err = 'geodesic', init = 'random', se
         Y = flag_mean_iteration(data, Y, sin_cos)
         err.append(calc_error_1_2(data, Y, opt_err))
         diff  = err[itr-1] - err[itr]
-           
+
         itr+=1
-        # print("itr: " + str(itr))
-        # print("err: " + str(err))
-        # print("diff: "  + str(diff))
+
 
     if diff > 0:
         return Y, err
@@ -342,7 +330,7 @@ def calc_gradient(data, Y0, weight = 'sine'):
         aX.append(al[-1]*x)
 
     big_X = np.hstack(aX)
-    
+
     grad = big_X @ big_X.T @ Y0
 
     return grad
@@ -360,7 +348,7 @@ def gradient_descent(data, r, alpha, n_its, sin_cos, init = 'random', seed = 0):
         sin_cos - a string defining the objective function
                     'sine' = flag median
                     'sinsq' = flag mean
-        init - string 'random' for random initlalization. 
+        init - string 'random' for random initlalization.
             otherwise input a numpy array for the inital point
     Outputs:
         Y - a numpy array representing the solution to the chosen optimization algorithm
@@ -384,7 +372,7 @@ def gradient_descent(data, r, alpha, n_its, sin_cos, init = 'random', seed = 0):
         Fy = calc_gradient(data,Y,sin_cos)
         # project the gradient onto the tangent space
         G = (np.eye(n)-Y@Y.T)@Fy
-        
+
         [U,S,V] = np.linalg.svd(G)
         cosin = np.diag(np.cos(-alpha*S))
         sin = np.vstack([np.diag(np.sin(-alpha*S)), np.zeros((n-r,r))])
@@ -392,6 +380,6 @@ def gradient_descent(data, r, alpha, n_its, sin_cos, init = 'random', seed = 0):
             Y = Y*V*cosin*V.T+U@sin *V.T
         else:
             Y = Y@V@cosin@V.T+U@sin@V.T
-        
+
         err.append(calc_error_1_2(data, Y, sin_cos))
     return Y, err

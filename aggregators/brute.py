@@ -1,17 +1,3 @@
-# coding: utf-8
-###
- # @file   brute.py
- # @author Sébastien Rouault <sebastien.rouault@alumni.epfl.ch>
- #
- # @section LICENSE
- #
- # Copyright © 2018-2020 École Polytechnique Fédérale de Lausanne (EPFL).
- # All rights reserved.
- #
- # @section DESCRIPTION
- #
- # Brute GAR.
-###
 
 import tools
 from . import register

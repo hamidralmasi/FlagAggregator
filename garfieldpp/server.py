@@ -1,34 +1,3 @@
-# coding: utf-8
-###
- # @file   server.py
- # @author Arsany Guirguis  <arsany.guirguis@epfl.ch>
- #
- # @section LICENSE
- #
- # Copyright (c) 2020 Arsany Guirguis.
- #
- # Permission is hereby granted, free of charge, to any person obtaining a copy
- # of this software and associated documentation files (the "Software"), to deal
- # in the Software without restriction, including without limitation the rights
- # to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
- # copies of the Software, and to permit persons to whom the Software is
- # furnished to do so, subject to the following conditions:
- #
- # The above copyright notice and this permission notice shall be included in all
- # copies or substantial portions of the Software.
- #
- # THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
- # IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
- # FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
- # AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
- # LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
- # OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
- # SOFTWARE.
- #
- # @section DESCRIPTION
- #
- # Parameter Server class.
-###
 
 #!/usr/bin/env python
 
@@ -51,7 +20,7 @@ from multiprocessing.dummy import Pool as ThreadPool
 
 class Server:
     """ Byzantine-resilient parameter server """
-    def __init__(self, rank, world_size, num_workers, num_ps, byz_wrk, byz_ps, wrk_base_name, ps_base_name, batch, model, dataset, optimizer,  *args, **kwargs):
+    def __init__(self, rank, world_size, num_workers, num_ps, byz_wrk, byz_ps, wrk_base_name, ps_base_name, batch, model, dataset, augmentedfolder, optimizer,  *args, **kwargs):
         """ Constructor of server Object
         Args
         rank           unique ID of this worker node in the deployment
@@ -85,7 +54,7 @@ class Server:
         # for name, para in self.model.named_parameters():
         #     print('{}: {}'.format(name, para.shape))
         # sys.exit()
-        manager = DatasetManager(dataset, batch*num_workers, 1, 2, 1)			#The parameters actually are dummy
+        manager = DatasetManager(dataset, augmentedfolder, batch*num_workers, 1, 2, 1)			#The parameters actually are dummy
         self.test_set = manager.get_test_set()
         self.train_set = manager.get_train_set()
         self.optimizer = tools.select_optimizer(self.model, optimizer,  *args, **kwargs)
@@ -121,11 +90,14 @@ class Server:
         if num_wait_wrk == self.num_workers:
             def get_grad(fut):
                 return fut.wait()[1].to(self.device)
+            def get_loss(fut):
+                return fut.wait()[2]
             pool_wrk = ThreadPool()
             futs = [_remote_method_async(wrk_type.compute_gradients, wrk_rref, iter_num, self.model) for wrk_rref, wrk_type in zip(self.workers_rref, self.workers_types)]
             build_th = threading.Thread(target=self.build_graph, args=(iter_num,))
             build_th.start()
             grads = pool_wrk.map(get_grad, futs)
+            losses = pool_wrk.map(get_loss, futs)
             pool_wrk.terminate()
             pool_wrk.join()
             del pool_wrk
@@ -154,7 +126,7 @@ class Server:
 #            del grads				#empty it for the next iteration
         #make sure that the graph is built (regardless of synchrony or not)
         build_th.join()
-        return grads
+        return grads, losses
 
     def get_models(self, num_wait_ps=-1):
         """ ask servers to get their latest models

@@ -1,17 +1,4 @@
-# coding: utf-8
-###
- # @file   misc.py
- # @author Sébastien Rouault <sebastien.rouault@alumni.epfl.ch>
- #
- # @section LICENSE
- #
- # Copyright © 2018-2019 École Polytechnique Fédérale de Lausanne (EPFL).
- # All rights reserved.
- #
- # @section DESCRIPTION
- #
- # Miscellaneous Python helpers.
-###
+
 
 __all__ = [
   "UnavailableException", "fatal_unavailable", "MethodCallReplicator",

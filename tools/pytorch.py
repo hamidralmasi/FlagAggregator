@@ -1,17 +1,3 @@
-# coding: utf-8
-###
- # @file   pytorch.py
- # @author Sébastien Rouault <sebastien.rouault@alumni.epfl.ch>
- #
- # @section LICENSE
- #
- # Copyright © 2018-2019 École Polytechnique Fédérale de Lausanne (EPFL).
- # All rights reserved.
- #
- # @section DESCRIPTION
- #
- # Helpers relative to PyTorch.
-###
 
 __all__ = ["relink", "flatten", "grad_of", "grads_of", "compute_avg_dev_max", "pnm"]
 

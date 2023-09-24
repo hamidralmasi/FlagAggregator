@@ -1,18 +1,3 @@
-# coding: utf-8
-###
- # @file   krum.py
- # @author Sébastien Rouault <sebastien.rouault@alumni.epfl.ch>
- #
- # @section LICENSE
- #
- # Copyright © 2018-2020 École Polytechnique Fédérale de Lausanne (EPFL).
- # All rights reserved.
- #
- # @section DESCRIPTION
- #
- # Multi-Krum GAR.
-###
-
 import tools
 from . import register
 
@@ -77,7 +62,18 @@ def aggregate(gradients, f, m=None, **kwargs):
     m = len(gradients) - f - 2
   # Compute aggregated gradient
   scores = _compute_scores(gradients, f, m, **kwargs)
-  return sum(grad for _, grad in scores[:m]).div_(m)
+
+  final = sum(grad for _, grad in scores[:m]).div_(m)
+
+  iter = kwargs.get('iter', 0)
+  filepath = kwargs.get('filepath', "/home/data/Garfield/pytorch_impl/applications/Aggregathor/")
+
+  # save the gradient
+  # if (iter % 5 == 0):
+  #   torch.save(final, filepath + 'Y_krum_' + str(iter//5) + '.pt')
+
+
+  return final
 
 def aggregate_native(gradients, f, m=None, **kwargs):
   """ Multi-Krum rule.

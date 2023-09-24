@@ -1,17 +1,4 @@
-# coding: utf-8
-###
- # @file   average.py
- # @author Sébastien Rouault <sebastien.rouault@alumni.epfl.ch>
- #
- # @section LICENSE
- #
- # Copyright © 2018-2020 École Polytechnique Fédérale de Lausanne (EPFL).
- # All rights reserved.
- #
- # @section DESCRIPTION
- #
- # Simple average GAR.
-###
+
 
 from . import register
 # import torch
@@ -26,10 +13,6 @@ def aggregate(gradients, **kwargs):
   Returns:
     Average gradient
   """
-  # mean = torch.mean(torch.stack(gradients), dim=0)
-  # std = torch.std(torch.stack(gradients), dim=0) + 1e-8
-  #normalize gradients
-  # gradients = [(g - mean) / std for g in gradients]
   average = sum(gradients) / len(gradients)
   return average
 
