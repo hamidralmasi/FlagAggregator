@@ -88,6 +88,15 @@ The following steps should be applied for **ALL** machines that are going to be 
 3. The paths inside `run_exp` scripts and `garfieldpp/dataset.py` should be updated according to your file system and datasets location.
 
 ## Citation
-Almasi H, Mishra H, Vamanan B, Ravi SN. Flag Aggregator: Scalable Distributed Training under Failures and Augmented Losses using Convex Optimization. arXiv preprint arXiv:2302.05865. 2023 Sep 24.
+```bib
+@misc{almasi2023flag,
+      title={Flag Aggregator: Scalable Distributed Training under Failures and Augmented Losses using Convex Optimization}, 
+      author={Hamidreza Almasi and Harsh Mishra and Balajee Vamanan and Sathya N. Ravi},
+      year={2023},
+      eprint={2302.05865},
+      archivePrefix={arXiv},
+      primaryClass={cs.LG}
+}
+```
 
 Correspondence to: Hamidreza Almasi <halmas3@uic.edu>.
