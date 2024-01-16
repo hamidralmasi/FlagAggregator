@@ -89,13 +89,13 @@ The following steps should be applied for **ALL** machines that are going to be 
 
 ## Citation
 ```bib
-@misc{almasi2023flag,
-      title={Flag Aggregator: Scalable Distributed Training under Failures and Augmented Losses using Convex Optimization}, 
-      author={Hamidreza Almasi and Harsh Mishra and Balajee Vamanan and Sathya N. Ravi},
-      year={2023},
-      eprint={2302.05865},
-      archivePrefix={arXiv},
-      primaryClass={cs.LG}
+@inproceedings{
+almasi2024flag,
+title={Flag Aggregator: Scalable Distributed Training under Failures and Augmented Losses using Convex Optimization},
+author={Hamidreza Almasi and Harsh Mishra and Balajee Vamanan and Sathya N. Ravi},
+booktitle={The Twelfth International Conference on Learning Representations},
+year={2024},
+url={https://openreview.net/forum?id=7avlrpzWqo}
 }
 ```
 
