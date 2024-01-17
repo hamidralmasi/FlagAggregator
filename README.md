@@ -1,6 +1,6 @@
 # Flag Aggregator
 
-This folder contains the implementation of the [Flag Aggregator](https://arxiv.org/abs/2302.05865) on PyTorch.
+This folder contains the implementation of the [Flag Aggregator](https://openreview.net/forum?id=7avlrpzWqo) on PyTorch.
 
 
 ## Requirements
